@@ -183,7 +183,7 @@ public class algebra_toolkit
         {
             for (int j = 0; j < shape[1]; j++)
             {
-                samples[i][j] = (double) rand.nextGaussian(mean, std);
+                samples[i][j] = rand.nextGaussian(mean, std);
             }
         }
 
@@ -198,13 +198,11 @@ public class algebra_toolkit
         double[][] result = new double[1][n];
 
         // Compute the sum along the axis = 0
-        for(int i = 0; i < X.length; i++)
-        {
-            for(int j = 0; j < n; j++)
-            {
-                result[0][j] += X[i][j];
+        for (double[] x : X)
+            for (int j = 0; j < n; j++) {
+                result[0][j] += x[j];
             }
-        }
+
         return result;
     }
 
