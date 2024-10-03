@@ -6,14 +6,11 @@ public class algebra_toolkit
 {
     public double[][] sum(double[][] A, double[][] B)
     {
-        /*
-         *   Method to performe the sum operation between two 2D arrays.
-         */
-
-        // Compute the number of rows and columns to performe the sum along the data
+        // Compute the number of rows and columns for the sum operation
         int ROWS = A.length, COLUMNS = A[0].length;
 
-        // Performe the sum between A (dot-product operation result) and B ( bias vector )
+        // Perform the element-wise sum of matrix A and the bias vector B
+        // Add each element of the bias B to the corresponding row in A
         for(int i = 0; i < ROWS; i++)
         {
             for(int j = 0; j < COLUMNS; j++)
@@ -21,19 +18,19 @@ public class algebra_toolkit
                 A[i][j] += B[0][j];
             }
         }
-
         return A;
     }
 
     public double[][] subtract(double[][] A, double[][] B)
     {
-        // Get the 2D-arrays shape
+        // Compute the numner of ROWS and COLUMNS of the matrix A
         int ROWS = A.length, COLUMNS = A[0].length;
 
         // Initialize a 2D-array to store the result of the operation
         double[][] C = new double[ROWS][COLUMNS];
 
-        // Performe the subtraction operation
+        // Perform the subtraction operation between the matrix A and B
+        // Subtract the model's parameters (weights | bias) with the computed gradients (dW | dB)
         for(int  i = 0; i < ROWS; i++)
         {
             for(int j = 0; j < COLUMNS; j++)
@@ -41,41 +38,19 @@ public class algebra_toolkit
                 C[i][j] = A[i][j] - B[i][j];
             }
         }
-
-        return C;
-    }
-
-    public double[][] diff(double[][] A, double[][] B)
-    {
-        /*
-         *   Method to performe the squared difference operation between two 2D arrays.
-         */
-
-        // Compute the number of rows and columns to subtract vector A and vector B
-        int ROWS = A.length, COLUMNS = A[0].length;
-
-        // Define a 2D array to store the operation's result (subtraction)
-        double[][] C = new double[ROWS][COLUMNS];
-
-        // Performe the subtraction between the vector A and vector B
-        for(int i = 0; i < ROWS; i++)
-        {
-            for(int j = 0; j < COLUMNS; j++)
-            {
-                C[i][j] = (A[i][j] - B[i][j]);
-            }
-        }
         return C;
     }
 
     public double[][] mult(double[][] A, double[][] B) throws Exception {
-        // Check for ( coeficient | array ) multiplication or ( array | array ) multiplication
-        //
+        // Perform either :
+        //              * the multiplication between a vector and a vector
+        //              * the multiplication between a coeficient and vector
         int i, j, ROWS, COLUMNS;
 
-        if (A.length == B.length) // ( array | array ) multiplication
+        if (A.length == B.length) // ( vector | vector ) multiplication
         {
-            // Initiliaze two 2D-arrays to store identify different input dimensions
+            // Initiliaze two 2D-arrays: X will store the higher-dimension vector and
+            // B the lower dimension vector
             double[][] X;
             double[][] Y;
 
@@ -98,7 +73,7 @@ public class algebra_toolkit
             // Define a 2D array to store operation's result
             double[][] C = new double[ROWS][COLUMNS];
 
-            // Performe the ( array | array ) multiplication
+            // Perform the ( array | array ) multiplication
             int ind;
             for (i = 0; i < ROWS; i++)
             {
@@ -113,7 +88,7 @@ public class algebra_toolkit
         }
         else if (A.length == 1 || B.length == 1) // ( coeficient | array ) multiplication
         {
-            // Get the coeficient to performe the operation
+            // Get the coeficient to perform the operation
             double[][] coef = (A.length == 1) ? A : B;
             double[][] array = (A.length == 1) ? B : A;
             int idx;
@@ -125,7 +100,7 @@ public class algebra_toolkit
             // Define a 2D array to store operation's result
             double[][] C = new double[ROWS][COLUMNS];
 
-            // Performe (coeficient | array ) multiplication
+            // Perform (coeficient | array ) multiplication
             for(i = 0; i < ROWS; i++)
             {
                 for(j = 0; j < COLUMNS; j++)
@@ -146,7 +121,7 @@ public class algebra_toolkit
     public double[][] matmul(double[][] A, double[][] B)
     {
         /*
-         *   Method to performe the dot-product operation between two 2D-arrays.
+         *   Method to perform the dot-product operation between two 2D-arrays.
          */
 
         // Compute the matrix size (square matrices)
@@ -155,7 +130,7 @@ public class algebra_toolkit
         // Define a 2D array to store the result of the operation
         double[][] C = new double[Y][Z];
 
-        // Performe dot-product between A and B matrices (square matrices)
+        // Perform dot-product between A and B matrices (square matrices)
         for(int i = 0; i < X; i++)
         {
             for(int j = 0; j < Y; j++)
@@ -211,7 +186,7 @@ public class algebra_toolkit
         // Define an integer to store the input dimension
         int input_dim = X[0].length;
         int N = X.length;
-        // Performe the sum along the rows
+        // Perform the sum along the rows
         double[][] addition = reduce_sum(X);
         // Divide the data by the amount of samples (N)
         for(int i = 0; i < input_dim; i++)

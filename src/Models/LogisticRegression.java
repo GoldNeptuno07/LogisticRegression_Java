@@ -6,19 +6,19 @@ public class LogisticRegression
 {
     // Initialize an attribute to define the input dimension
     int input_dim;
-    // Define the learning rate
+    // Initialize an attribute to store the learning rate
     double eta;
-    // Initialize a variable to store the loss
+    // Initialize an attribute to store the loss
     double loss = 0;
-    // Initialize variables to store the gradients
+    // Initialize an attribute to store the gradients
     double[][] dW;
     double[][] dB;
 
-    // Model parameters
+    // Define model's parameters (weights & bias)
     double[][] weights;
     double[][] bias = new double[1][1];
 
-    // Create an objecto of the algebra_toolkit
+    // Create an objecto of the algebra_toolkit class to perform algebraic operations
     algebra_toolkit tools = new algebra_toolkit();
 
     public LogisticRegression(int input_dim, double learning_rate)
@@ -28,7 +28,7 @@ public class LogisticRegression
         // Define learning rate
         this.eta = learning_rate;
 
-        // Initialize the weights from a normal distribution and the bias with zero
+        // Initialize the model's weights from a normal distribution and the bias with zero
         int[] weights_shape = {this.input_dim, 1};
         this.weights = tools.randomNormal(weights_shape, 0, 1);
         this.bias[0][0] = 0;
@@ -36,7 +36,7 @@ public class LogisticRegression
 
     public double[][] sigmoid(double[][] X)
     {
-        // Compute the sigmoid function for each sample
+        // Compute the sigmoid function for each sample in X
         for(int i = 0; i < X.length; i++)
         {
             X[i][0] = 1 / (1 + Math.exp(-X[i][0]));
@@ -46,35 +46,32 @@ public class LogisticRegression
 
     public double[][] predict(double[][] X)
     {
-        // Define a 2D-array to store the result
-        double[][] outputs = tools.sum(tools.matmul(X, this.weights), bias);
-        return sigmoid(outputs);
+        // Define a 2D-array to store the model's output computed
+        double[][] Z = tools.sum(tools.matmul(X, this.weights), bias);
+        return sigmoid(Z);
     }
 
     private void compute_gradients(double[][] y_true, double[][] y_pred, double[][] X) throws Exception {
-        // Compute the squared difference between the true labels and the predictions
-        double[][] diff = tools.diff(y_pred, y_true);
+        // Compute the difference between the true labels and the predicted labels
+        double[][] diff = tools.subtract(y_pred, y_true);
 
-        // Compute weights gradients
+        // Compute the gradients of the weights based on the loss
         double[][] dW = tools.mult(diff, X);
         dW = tools.reduce_mean(dW);
         this.dW = tools.transpose(dW);
 
-        // Compute bias gradients
+        // Compute gradients of the bias based on the loss
         this.dB = tools.reduce_mean(diff);
-
-        // Store the current loss to display it
-        this.loss = this.dB[0][0];
     }
 
     private void updateParameters() throws Exception {
-        // Define the learning rate as 2D-array to performe the multiplication between the gradients and the learnin rate
+        // Define the learning rate as 2D-array to perform the multiplication between the gradients and the learnin rate
         double[][] eta_array = {{this.eta}};
 
-        // Update the weights
+        // Update the gradients of the weights
         double[][] aux = tools.mult(eta_array, this.dW);
         this.weights = tools.subtract(this.weights, aux);
-        // Update the bias
+        // Update the gradients of the bias
         this.bias = tools.subtract(this.bias, tools.mult(eta_array, this.dB));
     }
 
@@ -82,7 +79,7 @@ public class LogisticRegression
     {
         // Reset the loss to zero
         this.loss = 0;
-        // Value to avoid log of zero
+        // Small value to avoid logarithm of zero during loss calculation
         double eps = 1e-8;
 
         // Compute the binary-crossentropy for each sample
@@ -96,20 +93,22 @@ public class LogisticRegression
 
     private void train_step(double[][] X, double[][] y) throws Exception {
 
-        // Performe a prediction
+        // Store the predicted values for input X (forward propagation)
         double[][] prediction = predict(X);
-        // Compute the loss to calculate the gradients
+        // Compute the gradients with respect to the weights and bias
         compute_gradients(y, prediction, X);
-        // Update the parameters
+        // Update the model's parameters using the calculated gradients
         updateParameters();
-        // Compute the loss
+        // Compute the loss between the true labels and the predicted labels
         binary_crossentropy(y, prediction);
     }
 
     public void fit(double[][] X, double[][] y, int epochs) throws Exception {
         for(int i = 0; i < epochs; i++)
         {
+            // Perform a train step to tweak the model's parameters
             train_step(X, y);
+            // Display the current epoch number and the computed loss
             System.out.printf("Epoch. " + (i + 1) + "\tLoss. " + this.loss + "\n");
         }
     }
