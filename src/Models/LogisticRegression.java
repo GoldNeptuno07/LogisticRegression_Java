@@ -1,7 +1,5 @@
 package Models;
 
-import Models.algebra_toolkit;
-
 public class LogisticRegression
 {
     // Initialize an attribute to define the input dimension
