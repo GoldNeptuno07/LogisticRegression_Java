@@ -1,11 +1,11 @@
-import Models.algebra_toolkit;
-import Models.LogisticRegression;
 
-public class Main
-{
+import com.models.LogisticRegression;
+import com.tools.AlgebraToolkit;
+
+public class Main {
     public static void main(String[] args) throws Exception {
         // Create an object of the algebra_toolkit class
-        algebra_toolkit tools = new algebra_toolkit();
+        AlgebraToolkit tools = new AlgebraToolkit();
 
         // Dataset dimension
         int[] shape = {10, 1};
