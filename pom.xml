@@ -11,6 +11,7 @@
     <modules>
         <module>my-models</module>
         <module>my-utils</module>
+        <module>my-gui</module>
     </modules>
 
 
