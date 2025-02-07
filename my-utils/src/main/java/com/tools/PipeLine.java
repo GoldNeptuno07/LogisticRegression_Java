@@ -8,7 +8,9 @@ import org.apache.beam.sdk.transforms.*;
 import org.apache.beam.sdk.values.*;
 
 import java.io.BufferedReader;
+import java.io.FileNotFoundException;
 import java.io.FileReader;
+import java.io.IOException;
 import java.util.*;
 
 /**
@@ -18,12 +20,23 @@ import java.util.*;
  * @author Angel Cruz
  * */
 public class PipeLine {
+    /*
+     * Path where the standardized data will be store
+     * */
+    final static String saveInPath = "StandardizedData";
+
+
     /**
      * Main PipeLine constructor, we will save the dataset path to carry out the
      * normalization of the data.
      * */
     public PipeLine()
     {}
+
+    public static void main(String[] args)
+    {
+        PipeLine.extractAndTransform("C:\\Users\\ADMIN\\Downloads\\data.csv", false);
+    }
 
     /**
      * Method to carry out the extraction and transformation of the data, and finally return
@@ -34,12 +47,6 @@ public class PipeLine {
      * */
     public static void extractAndTransform(String dataPath, boolean hasHeader)
     {
-        /*
-        * Path where the standardized data will be store
-        * */
-        String saveInPath = "StandardizedData";
-
-
         /* Define the pipeline */
         PipelineOptions options = PipelineOptionsFactory.create();
         Pipeline p = Pipeline.create(options);
@@ -69,7 +76,6 @@ public class PipeLine {
         PCollectionView<List<String>> headersView = p
                 .apply("Transform to PCollectionView", Create.of(Collections.singletonList(headers)))
                 .apply(View.asSingleton());
-
 
         /*
          * Since the Linear Regression model take two numerical features as input, we'll
@@ -301,7 +307,6 @@ public class PipeLine {
         finalDataset
                 .apply("Save Standardized Data into a csv file", TextIO.write().to(saveInPath).withNumShards(1).withSuffix(".csv"));
 
-
         try
         {
             p.run().waitUntilFinish();
@@ -310,6 +315,57 @@ public class PipeLine {
         {
             System.out.println("An error has ocurred.\n Exception caught. " + e.getMessage());
         }
+    }
+
+    public static List<List<Double>> loadDaset()
+    {
+        List<List<Double>> x_data = new ArrayList<>();
+        List<List<Double>> y_data = new ArrayList<>();
+
+        try
+        {
+            String[] header;
+            String line, token;
+            StringTokenizer tokens;
+            BufferedReader reader = new BufferedReader(new FileReader(saveInPath));
+
+            header = reader.readLine().split(",");
+
+            while((line = reader.readLine()) != null)
+            {
+                tokens = new StringTokenizer(line, ",");
+                List<Double> sample = new ArrayList<>();
+                while(tokens.hasMoreTokens())
+                {
+                    token = tokens.nextToken();
+                    double finalToken = Double.parseDouble(token);
+
+                    if(sample.size() == 2)
+                    {
+                        y_data.add(new ArrayList<Double>(){{
+                            add(finalToken);
+                        }});
+                        break;
+                    }
+
+                    sample.add(finalToken);
+                }
+                x_data.add(sample);
+            }
+        }
+        catch (FileNotFoundException e)
+        {
+            System.out.println("File Not Found, exception caught. " + e.getMessage());
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
+        return x_data;
+    }
+
+    public void loadData(String url)
+    {
+
     }
 }
 

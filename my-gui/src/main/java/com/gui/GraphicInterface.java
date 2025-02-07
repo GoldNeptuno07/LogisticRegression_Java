@@ -33,6 +33,7 @@ public class GraphicInterface extends JFrame {
 
     /**
      * Main constructor to define the main frame and all its widgets
+     *
      * */
     public GraphicInterface()
     {
