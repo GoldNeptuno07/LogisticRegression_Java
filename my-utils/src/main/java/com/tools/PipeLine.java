@@ -23,8 +23,10 @@ public class PipeLine {
     /*
      * Path where the standardized data will be store
      * */
-    final static String saveInPath = "StandardizedData";
+    final static String saveInPath = "my-utils/src/main/resources/StandardizedData";
 
+    /* Array to store the dataset header */
+    public String[] header;
 
     /**
      * Main PipeLine constructor, we will save the dataset path to carry out the
@@ -33,10 +35,10 @@ public class PipeLine {
     public PipeLine()
     {}
 
-    public static void main(String[] args)
-    {
-        PipeLine.extractAndTransform("C:\\Users\\ADMIN\\Downloads\\data.csv", false);
-    }
+//    public static void main(String[] args)
+//    {
+//
+//    }
 
     /**
      * Method to carry out the extraction and transformation of the data, and finally return
@@ -79,7 +81,7 @@ public class PipeLine {
 
         /*
          * Since the Linear Regression model take two numerical features as input, we'll
-         * get the first two numerical features we find.
+         * get the first two numerical features that we find.
          */
         PCollection<String> rows = raw_data.apply(ParDo.of(new DoFn<String, String>() {
             public static boolean isNumeric(String strNum)
@@ -317,20 +319,25 @@ public class PipeLine {
         }
     }
 
-    public static List<List<Double>> loadDaset()
+    public Map<String,List<List<Double>>> loadDataset()
     {
+        // Define csv file url
+        String url = saveInPath + "-00000-of-00001.csv";
+
+        // Initialize arrays to store the data
         List<List<Double>> x_data = new ArrayList<>();
         List<List<Double>> y_data = new ArrayList<>();
 
         try
         {
-            String[] header;
             String line, token;
             StringTokenizer tokens;
-            BufferedReader reader = new BufferedReader(new FileReader(saveInPath));
+            BufferedReader reader = new BufferedReader(new FileReader(url));
 
-            header = reader.readLine().split(",");
+            // Save header
+            this.header = reader.readLine().split(",");
 
+            // Read the file lines
             while((line = reader.readLine()) != null)
             {
                 tokens = new StringTokenizer(line, ",");
@@ -340,16 +347,17 @@ public class PipeLine {
                     token = tokens.nextToken();
                     double finalToken = Double.parseDouble(token);
 
-                    if(sample.size() == 2)
+                    if(sample.size() == 2) // Save sample's label
                     {
                         y_data.add(new ArrayList<Double>(){{
                             add(finalToken);
                         }});
                         break;
                     }
-
+                    // Store numerical value
                     sample.add(finalToken);
                 }
+                // Store sample
                 x_data.add(sample);
             }
         }
@@ -360,12 +368,18 @@ public class PipeLine {
             throw new RuntimeException(e);
         }
 
-        return x_data;
+        // Store data into a Hash Map
+        Map<String, List<List<Double>>> data = new HashMap<String, List<List<Double>>> ();
+
+        data.put("X", x_data);
+        data.put("y", y_data);
+
+        return data;
     }
 
-    public void loadData(String url)
+    public String[] get_header()
     {
-
+        return this.header;
     }
 }
 

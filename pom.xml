@@ -12,8 +12,8 @@
         <module>my-models</module>
         <module>my-utils</module>
         <module>my-gui</module>
+        <module>app</module>
     </modules>
-
 
     <properties>
         <maven.compiler.source>17</maven.compiler.source>
@@ -22,7 +22,7 @@
     </properties>
 
     <build>
-        <sourceDirectory>src/main/java</sourceDirectory> <!-- Standard Source Directory -->
+        <sourceDirectory>src/main/java</sourceDirectory>
         <resources>
             <resource>
                 <directory>src/main/resources</directory>

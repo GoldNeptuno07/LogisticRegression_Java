@@ -209,7 +209,6 @@ public class AlgebraToolkit {
                 C[j][i] = X[i][j];
             }
         }
-
         return C;
     }
 }

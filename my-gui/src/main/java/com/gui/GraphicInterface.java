@@ -15,6 +15,13 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
+import java.io.File;
+import java.util.List;
+import java.util.Map;
+
+import com.tools.PipeLine;
+import com.models.LogisticRegression;
+
 /**
  * This class will be used to generate the main GUI, in order to define the layout of the widgets and
  * show the decision boundary of the Logistic Regression model.
@@ -23,13 +30,13 @@ import java.awt.event.ActionListener;
  *
  * */
 public class GraphicInterface extends JFrame {
-    private JFrame mainFrame;
-    private JMenuBar  menuBar;
-    private JLabel instructionLabel;
+    final private JFrame mainFrame;
+    final private JMenuBar  menuBar;
+    final private JLabel instructionLabel;
     private ChartPanel decisionBoundaryPanel;
 
     private String datasetURL;
-    private int numberFeatures = 2;
+    final private int numberFeatures = 2;
 
     /**
      * Main constructor to define the main frame and all its widgets
@@ -57,19 +64,25 @@ public class GraphicInterface extends JFrame {
         selectDataBttn.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                    try
-                    {
-                        JFileChooser chooserWindow = new JFileChooser();
-                        chooserWindow.showSaveDialog(null);
-                        datasetURL = chooserWindow.getSelectedFile().getAbsolutePath();
+                JFileChooser chooserWindow = new JFileChooser();
+                int returnValue = chooserWindow.showSaveDialog(null);
 
-                        displayModelWidgets();
+                if (returnValue == JFileChooser.APPROVE_OPTION) {
+                    File selectedFile = chooserWindow.getSelectedFile();
+                    if (selectedFile != null) {
+                        datasetURL = selectedFile.getAbsolutePath();
+                        try {
+                            displayModelWidgets();
+                        } catch (Exception ex) {
+                            throw new RuntimeException(ex);
+                        }
+                    } else {
+                        System.err.println("Error: No file selected.");
                     }
-                    catch (Exception exc)
-                    {
-                        System.err.println("PATH RECEIVE IS NULL. \n" + e);
-                    }
+                } else {
+                    System.err.println("User canceled file selection.");
                 }
+            }
         });
 
         /* Define Instruction Label */
@@ -85,16 +98,14 @@ public class GraphicInterface extends JFrame {
     /**
      * Method to train the model in order to plot the decision boundary and display
      * the text fields to make a prediction.
-     *
      * */
-    private void displayModelWidgets()
-    {
+    private void displayModelWidgets() throws Exception {
         mainFrame.remove(instructionLabel);
 
         /* Build Decision Boundary Chart */
         displayDecisionBoundary();
 
-        /* SOUTH Prediciton Panel */
+        /* SOUTH Prediction Panel */
         JPanel predictionPanel = new JPanel();
         predictionPanel.setLayout(new FlowLayout());
 
@@ -115,19 +126,76 @@ public class GraphicInterface extends JFrame {
     }
 
     /**
-     * Method to build the decicion boundary chart
+     * Method to build the decision boundary chart
      * */
-    private void displayDecisionBoundary()
-    {
+    private void displayDecisionBoundary() throws Exception {
+        /*
+        *   Execute the PipeLine
+        * */
+        System.out.println("Executing Pipeline...");
+        PipeLine pipeline = new PipeLine();
+        //PipeLine.extractAndTransform(datasetURL, true);
+
+        System.out.println("After Pipeline...");
+
+        Map<String, List<List<Double>>> data_map = pipeline.loadDataset();
+        String[] header = pipeline.get_header();
+
+        System.out.println("After Load Data...");
+
+        // Get X and y set
+        double[][] X_samples = convertList2Array(data_map.get("X"));
+        double[][] y_samples = convertList2Array(data_map.get("y"));
+
+        /*
+        * Train Model
+        * */
+        System.out.println("Training the model...");
+        LogisticRegression classif = new LogisticRegression(2, 0.01);
+        classif.fit(X_samples, y_samples, 100);
+
+        /*
+        * Predicting Grid
+        * */
+        System.out.println("predicting Grid...");
+        double[] min = {Double.MAX_VALUE,Double.MAX_VALUE};
+        double[] max = {Double.MIN_VALUE,Double.MIN_VALUE};
+        for(double[] num : X_samples) // Get the minimum and maximum per feature
+        {
+            // Compare feature 1
+            if(num[0] < min[0]) min[0] = num[0]; // min
+            if(num[0] > max[0]) max[0] = num[0]; // max
+            // Compare feature 2
+            if(num[1] < min[1]) min[1] = num[1]; // min
+            if(num[1] > max[1]) max[1] = num[1]; // max
+        }
+
         XYSeries series1 = new XYSeries("Class 1");
         XYSeries series2 = new XYSeries("Class 2");
-        for(double y = 0; y <= 2; y += 0.1)
+
+        double offset= 0.3;
+        for(double x = min[0]-offset; x < max[0]+offset; x= x + 0.1)
         {
-            for(double x = 0; x <= 5; x += 0.1)
+            for(double y = min[1]-offset; y < max[1]+offset; y= y + 0.1)
             {
-                series1.add(x, y);
-                series2.add(x, y + 2);
+                double[][] sample = {{x,y}};
+                double[][] prediction = classif.predict(sample);
+
+                // Determine the sample class
+                if(prediction[0][0] < 0.5) series1.add(x,y);
+                else series2.add(x,y);
             }
+        }
+
+        /*
+        * Adding sample points
+        * */
+        for(int i = 0; i < X_samples.length; i++)
+        {
+            if(y_samples[i][0] == 0)
+                series1.add(X_samples[i][0],X_samples[i][1]);
+            else
+                series2.add(X_samples[i][0],X_samples[i][1]);
         }
 
         XYSeriesCollection dataset = new XYSeriesCollection();
@@ -136,8 +204,8 @@ public class GraphicInterface extends JFrame {
 
         JFreeChart chart = ChartFactory.createXYLineChart(
                 "Decision Boundary",
-                "Feature 1",
-                "Feature 2",
+                header[0],
+                header[1],
                 dataset,
                 PlotOrientation.VERTICAL,
                 true,
@@ -166,8 +234,25 @@ public class GraphicInterface extends JFrame {
         decisionBoundaryPanel.setPreferredSize(new Dimension(600, 500));
     }
 
-    public static void main(String[] args)
+    private double[][] convertList2Array(List<List<Double>> list)
     {
-        GraphicInterface gui = new GraphicInterface();
+        int size = list.size();
+        double[][] array = new double[size][2];
+
+        // Cast List to Array
+        for(int i = 0; i < size; i++)
+        {
+            List<Double> row = list.get(i);
+            if(row == null || row.size() < 2)
+            {
+                System.err.println("Error: Row at index " + i);
+                continue;
+            }
+
+            array[i][0]= row.get(0);
+            array[i][1]= row.get(1);
+        }
+
+        return array;
     }
 }
