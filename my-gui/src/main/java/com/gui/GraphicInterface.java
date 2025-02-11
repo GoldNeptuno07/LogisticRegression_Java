@@ -1,6 +1,5 @@
 package com.gui;
 
-
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.ChartPanel;
 import org.jfree.chart.JFreeChart;
@@ -134,7 +133,7 @@ public class GraphicInterface extends JFrame {
         * */
         System.out.println("Executing Pipeline...");
         PipeLine pipeline = new PipeLine();
-        //PipeLine.extractAndTransform(datasetURL, true);
+        PipeLine.extractAndTransform(datasetURL, true);
 
         System.out.println("After Pipeline...");
 
@@ -146,6 +145,9 @@ public class GraphicInterface extends JFrame {
         // Get X and y set
         double[][] X_samples = convertList2Array(data_map.get("X"));
         double[][] y_samples = convertList2Array(data_map.get("y"));
+
+        for(int i = 0; i < X_samples.length; i++)
+            System.out.println(y_samples[i][0]);
 
         /*
         * Train Model
@@ -170,8 +172,10 @@ public class GraphicInterface extends JFrame {
             if(num[1] > max[1]) max[1] = num[1]; // max
         }
 
-        XYSeries series1 = new XYSeries("Class 1");
-        XYSeries series2 = new XYSeries("Class 2");
+        XYSeries series1 = new XYSeries("Boundary 1");
+        XYSeries series2 = new XYSeries("Boundary 2");
+        XYSeries series3 = new XYSeries("Class 1");
+        XYSeries series4 = new XYSeries("Class 2");
 
         double offset= 0.3;
         for(double x = min[0]-offset; x < max[0]+offset; x= x + 0.1)
@@ -192,15 +196,23 @@ public class GraphicInterface extends JFrame {
         * */
         for(int i = 0; i < X_samples.length; i++)
         {
-            if(y_samples[i][0] == 0)
-                series1.add(X_samples[i][0],X_samples[i][1]);
-            else
-                series2.add(X_samples[i][0],X_samples[i][1]);
+            if(y_samples[i][0] == 0.0){
+                //System.out.println(y_samples[i][1]);
+                series3.add(X_samples[i][0],X_samples[i][1]);
+            }
+            else{
+                //System.out.println("Sample 2");
+                series4.add(X_samples[i][0],X_samples[i][1]);
+            }
+
         }
 
         XYSeriesCollection dataset = new XYSeriesCollection();
         dataset.addSeries(series1);
         dataset.addSeries(series2);
+        dataset.addSeries(series3);
+        dataset.addSeries(series4);
+
 
         JFreeChart chart = ChartFactory.createXYLineChart(
                 "Decision Boundary",
@@ -223,6 +235,12 @@ public class GraphicInterface extends JFrame {
         renderer.setSeriesLinesVisible(1, false);
         renderer.setSeriesShapesVisible(1, true);
 
+        renderer.setSeriesLinesVisible(2, false);
+        renderer.setSeriesShapesVisible(2, true);
+
+        renderer.setSeriesLinesVisible(3, false);
+        renderer.setSeriesShapesVisible(3, true);
+
         plot.setRenderer(renderer);
 
         plot.setBackgroundPaint(Color.darkGray);
@@ -243,14 +261,14 @@ public class GraphicInterface extends JFrame {
         for(int i = 0; i < size; i++)
         {
             List<Double> row = list.get(i);
-            if(row == null || row.size() < 2)
+            if(row == null)
             {
                 System.err.println("Error: Row at index " + i);
                 continue;
             }
 
-            array[i][0]= row.get(0);
-            array[i][1]= row.get(1);
+            for(int j = 0; j < row.size(); j++)
+                array[i][j] = row.get(j);
         }
 
         return array;

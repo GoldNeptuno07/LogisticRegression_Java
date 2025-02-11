@@ -35,10 +35,12 @@ public class PipeLine {
     public PipeLine()
     {}
 
-//    public static void main(String[] args)
-//    {
-//
-//    }
+    public static void main(String[] args)
+    {
+        PipeLine pipeline = new PipeLine();
+        PipeLine.extractAndTransform("/Users/angel_c/Downloads/data.csv", true);
+
+    }
 
     /**
      * Method to carry out the extraction and transformation of the data, and finally return
@@ -56,7 +58,6 @@ public class PipeLine {
         /*
         * Load the dataset from the file. Then, extract the headers to map each
         * value to its corresponding feature.
-        *
         */
         PCollection<String> raw_data = p
                     .apply("Load each line of the dataset", TextIO.read().from(dataPath));
