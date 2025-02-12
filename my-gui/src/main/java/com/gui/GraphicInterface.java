@@ -197,11 +197,9 @@ public class GraphicInterface extends JFrame {
         for(int i = 0; i < X_samples.length; i++)
         {
             if(y_samples[i][0] == 0.0){
-                //System.out.println(y_samples[i][1]);
                 series3.add(X_samples[i][0],X_samples[i][1]);
             }
             else{
-                //System.out.println("Sample 2");
                 series4.add(X_samples[i][0],X_samples[i][1]);
             }
 
