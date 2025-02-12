@@ -29,13 +29,20 @@ import com.models.LogisticRegression;
  *
  * */
 public class GraphicInterface extends JFrame {
+    // GUI widgets
     final private JFrame mainFrame;
     final private JMenuBar  menuBar;
     final private JLabel instructionLabel;
-    private ChartPanel decisionBoundaryPanel;
 
+    // Decision boundary / model
+    private ChartPanel decisionBoundaryPanel;
+    private double model_loss;
+    // Data
     private String datasetURL;
     final private int numberFeatures = 2;
+    // Pipeline
+    PipeLine pipeline = new PipeLine();
+
 
     /**
      * Main constructor to define the main frame and all its widgets
@@ -102,7 +109,7 @@ public class GraphicInterface extends JFrame {
         mainFrame.remove(instructionLabel);
 
         /* Build Decision Boundary Chart */
-        displayDecisionBoundary();
+        displayDecisionBoundary(true);
 
         /* SOUTH Prediction Panel */
         JPanel predictionPanel = new JPanel();
@@ -118,48 +125,59 @@ public class GraphicInterface extends JFrame {
             predictionPanel.add(featuresFields[i]);
         }
 
+        // Retrain Model Button
+        JButton retrain_model_bttn = new JButton("Retrain Model");
+        retrain_model_bttn.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                try {
+                    displayDecisionBoundary(false);
+                } catch (Exception ex) {
+                    throw new RuntimeException(ex);
+                }
+            }
+        });
+        predictionPanel.add(retrain_model_bttn);
+
         /* Add widgets to the main frame */
         mainFrame.add(decisionBoundaryPanel);
         mainFrame.add(predictionPanel, BorderLayout.SOUTH);
+
+        mainFrame.revalidate();
+        mainFrame.repaint();
+
         mainFrame.pack();
     }
 
     /**
-     * Method to build the decision boundary chart
+     * Method to build the decision boundary chart.
      * */
-    private void displayDecisionBoundary() throws Exception {
+    private void displayDecisionBoundary(boolean executePipeLine) throws Exception {
         /*
         *   Execute the PipeLine
         * */
-        System.out.println("Executing Pipeline...");
-        PipeLine pipeline = new PipeLine();
-        PipeLine.extractAndTransform(datasetURL, true);
-
-        System.out.println("After Pipeline...");
-
+        if(executePipeLine)
+        {
+            PipeLine.extractAndTransform(datasetURL, true);
+        }
         Map<String, List<List<Double>>> data_map = pipeline.loadDataset();
         String[] header = pipeline.get_header();
 
-        System.out.println("After Load Data...");
-
-        // Get X and y set
+        // Get and cast X and y set.
         double[][] X_samples = convertList2Array(data_map.get("X"));
         double[][] y_samples = convertList2Array(data_map.get("y"));
-
-        for(int i = 0; i < X_samples.length; i++)
-            System.out.println(y_samples[i][0]);
 
         /*
         * Train Model
         * */
-        System.out.println("Training the model...");
-        LogisticRegression classif = new LogisticRegression(2, 0.01);
-        classif.fit(X_samples, y_samples, 100);
+        LogisticRegression classif = new LogisticRegression(2, 0.01, 0);
+        classif.fit(X_samples, y_samples, 20);
+        model_loss= classif.get_loss();
+        mainFrame.setTitle(String.format("Logistic Regression. (loss. %.2f)", model_loss));
 
         /*
         * Predicting Grid
         * */
-        System.out.println("predicting Grid...");
         double[] min = {Double.MAX_VALUE,Double.MAX_VALUE};
         double[] max = {Double.MIN_VALUE,Double.MIN_VALUE};
         for(double[] num : X_samples) // Get the minimum and maximum per feature
@@ -202,7 +220,6 @@ public class GraphicInterface extends JFrame {
             else{
                 series4.add(X_samples[i][0],X_samples[i][1]);
             }
-
         }
 
         XYSeriesCollection dataset = new XYSeriesCollection();
@@ -239,23 +256,40 @@ public class GraphicInterface extends JFrame {
         renderer.setSeriesLinesVisible(3, false);
         renderer.setSeriesShapesVisible(3, true);
 
+        // Apply configuration
         plot.setRenderer(renderer);
 
+        // Change the grid style
         plot.setBackgroundPaint(Color.darkGray);
         plot.setRangeGridlinePaint(Color.white);
         plot.setDomainGridlinePaint(Color.white);
 
+        // Add chart to the decision boundary.
+        if(decisionBoundaryPanel != null)
+        {
+            mainFrame.remove(decisionBoundaryPanel);
+            decisionBoundaryPanel.setChart(null);
+        }
+
         decisionBoundaryPanel = new ChartPanel(chart);
         decisionBoundaryPanel.setMouseWheelEnabled(false);
         decisionBoundaryPanel.setPreferredSize(new Dimension(600, 500));
+
+        decisionBoundaryPanel.revalidate();
+        decisionBoundaryPanel.repaint();
     }
 
+    /***
+     * Method to cast an List<List<Double>> into a Double[][] list.
+     * @param list
+     * @return array
+     */
     private double[][] convertList2Array(List<List<Double>> list)
     {
         int size = list.size();
         double[][] array = new double[size][2];
 
-        // Cast List to Array
+        // Casting a List to an Array
         for(int i = 0; i < size; i++)
         {
             List<Double> row = list.get(i);
@@ -264,7 +298,6 @@ public class GraphicInterface extends JFrame {
                 System.err.println("Error: Row at index " + i);
                 continue;
             }
-
             for(int j = 0; j < row.size(); j++)
                 array[i][j] = row.get(j);
         }

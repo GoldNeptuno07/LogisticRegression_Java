@@ -62,12 +62,11 @@ $\frac{\partial L}{\partial b} = \frac{\partial L}{\partial \sigma} . \frac{\par
 
 
 # TO DO
-- Add sample points to the plot.
 - Check pipeline to accept data files with more than 2 features.
-- Move PipeLine instance in the GUI module.
 - Implement the prediction functionality.
 - Display the feature names in the plot.
 - Display the class names in the plot.
+- Add the functionality "Retrain Model".
 
 
 

@@ -17,29 +17,39 @@ public class LogisticRegression {
     double[][] weights;
     double[][] bias = new double[1][1];
 
+    // Verbose
+    int verbose= 1;
+
     // Create an objecto of the algebra_toolkit class to perform algebraic operations
     AlgebraToolkit tools = new AlgebraToolkit();
 
-    public LogisticRegression(int input_dim, double learning_rate)
+    /***
+     * Main constructor for the LogisticRegression class
+     * @param input_dim Input dimension or number of features in the dataset.
+     * @param learning_rate Learning rate.
+     * @param verbose   1 to print loss else 0.
+     */
+    public LogisticRegression(int input_dim, double learning_rate, int verbose)
     {
-        // Store the input dimention of the dataset
+        // Store the input dimension of the dataset
         this.input_dim = input_dim;
         // Define learning rate
         this.eta = learning_rate;
 
-        // Initialize the model's weights from a normal distribution and the bias with zero
+        // Initialize the model's weights from a normal distribution and the bias with zero.
         int[] weights_shape = {this.input_dim, 1};
         this.weights = tools.randomNormal(weights_shape, 0, 1);
         this.bias[0][0] = 0;
+
+        this.verbose = verbose;
     }
 
     public double[][] sigmoid(double[][] X)
     {
         // Compute the sigmoid function for each sample in X
         for(int i = 0; i < X.length; i++)
-        {
             X[i][0] = 1 / (1 + Math.exp(-X[i][0]));
-        }
+
         return X;
     }
 
@@ -107,8 +117,15 @@ public class LogisticRegression {
         {
             // Perform a train step to tweak the model's parameters
             train_step(X, y);
+
             // Display the current epoch number and the computed loss
-            System.out.printf("Epoch. " + (i + 1) + "\tLoss. " + this.loss + "\n");
+            if(verbose == 1)
+                System.out.printf("Epoch. " + (i + 1) + "\tLoss. " + this.loss + "\n");
         }
+    }
+
+    public double get_loss()
+    {
+        return this.loss;
     }
 }
