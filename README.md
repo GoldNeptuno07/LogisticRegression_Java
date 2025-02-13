@@ -60,6 +60,7 @@ $\frac{\partial L}{\partial W} = \frac{\partial L}{\partial \sigma} . \frac{\par
 
 $\frac{\partial L}{\partial b} = \frac{\partial L}{\partial \sigma} . \frac{\partial \sigma}{\partial Z} . \frac{\partial Z}{\partial b}$
 
+<center><img src="resources/img.png" width="500px"></center>
 
 # TO DO
 - Add the Help text in the GUI
