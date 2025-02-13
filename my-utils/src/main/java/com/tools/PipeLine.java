@@ -11,7 +11,15 @@ import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
-import java.util.*;
+import java.util.List;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Arrays;
+import java.util.Map;
+import java.util.HashMap;
+import java.util.StringTokenizer;
+
+import javax.swing.JOptionPane;
 
 /**
  * Pipeline class to performe ETL based on the given dataset. The dataset will be normalized
@@ -35,21 +43,13 @@ public class PipeLine {
     public PipeLine()
     {}
 
-    public static void main(String[] args)
-    {
-        PipeLine pipeline = new PipeLine();
-        PipeLine.extractAndTransform("/Users/angel_c/Downloads/data.csv", true);
-
-    }
-
     /**
      * Method to carry out the extraction and transformation of the data, and finally return
      * the normalized data.
      *
      * @param dataPath Dataset file path
-     * @param hasHeader If the dataset has headers, otherwise add default headers
      * */
-    public static void extractAndTransform(String dataPath, boolean hasHeader)
+    public static boolean extractAndTransform(String dataPath)
     {
         /* Define the pipeline */
         PipelineOptions options = PipelineOptionsFactory.create();
@@ -68,10 +68,19 @@ public class PipeLine {
             BufferedReader br = new BufferedReader(new FileReader(dataPath));
             String headerLine = br.readLine();
             headers = Arrays.asList(headerLine.split(","));
+
+            if(headers.size() < 3)
+                throw new Exception("Invalid number of features...");
+
+            // Getting the first two features and the last one which should be the labels.
+            headers= new ArrayList<String>(Arrays.asList(headers.get(0),headers.get(1),headers.get(headers.size() - 1)));
         }
         catch(Exception e)
         {
-            System.out.println("Exception caught. " + e.getMessage());
+            String message= "InfoBox: Data must be at least with two features and at the end the label.";
+            JOptionPane.showMessageDialog(null, message,"Invalid number of features", JOptionPane.INFORMATION_MESSAGE);
+
+            return false;
         }
 
         PCollection<String> headersPCollection = p
@@ -113,6 +122,8 @@ public class PipeLine {
                     {
                         if (isNumeric(val))
                             num_features.add(val);
+                        else
+                            break;
 
                         if (num_features.size() == 2)
                             break;
@@ -129,12 +140,12 @@ public class PipeLine {
         }));
 
         /*
-        * Since "population" PCollection will be an unordered KV map, we could lose the order of the
-        * features. We can use this structure to compute statistics, like mean and standard deviation
+        * Since "population" PCollection will be an unordered KV map, we could lose the corresponding order of the
+        * features and labels. We can use this structure to compute statistics, like mean and standard deviation
         * efficiently using Mean.perKey().
         *
-        * And we'll use "samples" PCollection to Standardize the data, since, it preserves the order of
-        * corresponding features in a single List.
+        * And we'll use "samples" PCollection to Standardize the data, since, it preserves the order of the
+        * corresponding features and labels in a single List.
         *
         * */
         final TupleTag<KV<String, Double>> populationTag = new TupleTag<KV<String, Double>>(){};
@@ -318,6 +329,8 @@ public class PipeLine {
         {
             System.out.println("An error has ocurred.\n Exception caught. " + e.getMessage());
         }
+
+        return true;
     }
 
     public Map<String,List<List<Double>>> loadDataset()

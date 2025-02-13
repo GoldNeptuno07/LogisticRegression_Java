@@ -13,6 +13,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.Color;
 
 import java.io.File;
 import java.util.List;
@@ -33,14 +34,18 @@ public class GraphicInterface extends JFrame {
     final private JFrame mainFrame;
     final private JMenuBar  menuBar;
     final private JLabel instructionLabel;
+    private XYSeriesCollection dataset; // Chart points
 
     // Decision boundary / model
+    private LogisticRegression classif;
     private ChartPanel decisionBoundaryPanel;
     private double model_loss;
+    private XYSeries prediction_series;
+
     // Data
     private String datasetURL;
     final private int numberFeatures = 2;
-    // Pipeline
+    // Preprocessing Pipeline
     PipeLine pipeline = new PipeLine();
 
 
@@ -55,7 +60,7 @@ public class GraphicInterface extends JFrame {
         mainFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         mainFrame.setMinimumSize(new Dimension(600, 400));
 
-        /* Define Menu Bar Buttons */
+        /* Define MenuBar Buttons */
         menuBar = new JMenuBar();
         JMenu fitModel = new JMenu("Fit Model");
         JMenu helpWindow = new JMenu("Help");
@@ -66,13 +71,14 @@ public class GraphicInterface extends JFrame {
         menuBar.add(fitModel);
         menuBar.add(helpWindow);
 
-        /* Menu Bar Click Listener (Commands) */
+        /* MenuBar Action Listener (Commands) */
         selectDataBttn.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 JFileChooser chooserWindow = new JFileChooser();
                 int returnValue = chooserWindow.showSaveDialog(null);
 
+                // Select the data path
                 if (returnValue == JFileChooser.APPROVE_OPTION) {
                     File selectedFile = chooserWindow.getSelectedFile();
                     if (selectedFile != null) {
@@ -92,7 +98,7 @@ public class GraphicInterface extends JFrame {
         });
 
         /* Define Instruction Label */
-        instructionLabel = new JLabel("Please select a dataset to train the Logistic Regression model...");
+        instructionLabel = new JLabel("\tPlease select a dataset to train the Logistic Regression model...");
 
         /* Adding the widgets to the Main Frame */
         mainFrame.add(menuBar, BorderLayout.NORTH);
@@ -106,16 +112,19 @@ public class GraphicInterface extends JFrame {
      * the text fields to make a prediction.
      * */
     private void displayModelWidgets() throws Exception {
-        mainFrame.remove(instructionLabel);
-
         /* Build Decision Boundary Chart */
-        displayDecisionBoundary(true);
+        boolean code= displayDecisionBoundary(true);
+        if(!code)
+        {
+            return;
+        }
+        mainFrame.remove(instructionLabel);
 
         /* SOUTH Prediction Panel */
         JPanel predictionPanel = new JPanel();
         predictionPanel.setLayout(new FlowLayout());
 
-        JLabel predLabel = new JLabel("Make a Prediction. ");
+        JLabel predLabel = new JLabel("Plot point. ");
         JTextField[] featuresFields = new JTextField[numberFeatures];
 
         predictionPanel.add(predLabel);
@@ -124,27 +133,61 @@ public class GraphicInterface extends JFrame {
             featuresFields[i] = new JTextField(10);
             predictionPanel.add(featuresFields[i]);
         }
+        JButton predictBtnn = new JButton("Show"); // Predict Bttn
+        predictBtnn.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                Double X, Y;
+                if(featuresFields[0].getText().isEmpty() || featuresFields[1].getText().isEmpty()) return;
+
+                X= Double.parseDouble(featuresFields[0].getText());
+                Y= Double.parseDouble(featuresFields[1].getText());
+
+                if(dataset.indexOf("New Samples") == -1)
+                {
+                    prediction_series= new XYSeries("New Samples");
+                    prediction_series.add(X,Y);
+                    dataset.addSeries(prediction_series);
+                }
+                else
+                    prediction_series.add(X,Y);
+
+                featuresFields[0].setText("");
+                featuresFields[1].setText("");
+
+                mainFrame.repaint();
+                mainFrame.revalidate();
+            }
+        });
 
         // Retrain Model Button
         JButton retrain_model_bttn = new JButton("Retrain Model");
+        retrain_model_bttn.setBackground(Color.BLACK);
+        retrain_model_bttn.setForeground(Color.white);
         retrain_model_bttn.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 try {
+                    // Build the decision boundary
                     displayDecisionBoundary(false);
+                    // Add the decisionBoundary to the mainFrame
+                    mainFrame.add(decisionBoundaryPanel);
+                    mainFrame.revalidate();
+                    mainFrame.repaint();
+
                 } catch (Exception ex) {
                     throw new RuntimeException(ex);
                 }
             }
         });
-        predictionPanel.add(retrain_model_bttn);
+
 
         /* Add widgets to the main frame */
         mainFrame.add(decisionBoundaryPanel);
         mainFrame.add(predictionPanel, BorderLayout.SOUTH);
 
-        mainFrame.revalidate();
-        mainFrame.repaint();
+        predictionPanel.add(predictBtnn);
+        predictionPanel.add(retrain_model_bttn);
 
         mainFrame.pack();
     }
@@ -152,13 +195,16 @@ public class GraphicInterface extends JFrame {
     /**
      * Method to build the decision boundary chart.
      * */
-    private void displayDecisionBoundary(boolean executePipeLine) throws Exception {
+    private boolean displayDecisionBoundary(boolean executePipeLine) throws Exception {
         /*
         *   Execute the PipeLine
         * */
         if(executePipeLine)
         {
-            PipeLine.extractAndTransform(datasetURL, true);
+            boolean code= PipeLine.extractAndTransform(datasetURL);
+
+            if(!code)
+                return false;
         }
         Map<String, List<List<Double>>> data_map = pipeline.loadDataset();
         String[] header = pipeline.get_header();
@@ -170,7 +216,7 @@ public class GraphicInterface extends JFrame {
         /*
         * Train Model
         * */
-        LogisticRegression classif = new LogisticRegression(2, 0.01, 0);
+        classif = new LogisticRegression(2, 0.01, 0);
         classif.fit(X_samples, y_samples, 20);
         model_loss= classif.get_loss();
         mainFrame.setTitle(String.format("Logistic Regression. (loss. %.2f)", model_loss));
@@ -222,12 +268,11 @@ public class GraphicInterface extends JFrame {
             }
         }
 
-        XYSeriesCollection dataset = new XYSeriesCollection();
+        dataset = new XYSeriesCollection();
+        dataset.addSeries(series4);
+        dataset.addSeries(series3);
         dataset.addSeries(series1);
         dataset.addSeries(series2);
-        dataset.addSeries(series3);
-        dataset.addSeries(series4);
-
 
         JFreeChart chart = ChartFactory.createXYLineChart(
                 "Decision Boundary",
@@ -247,14 +292,23 @@ public class GraphicInterface extends JFrame {
         renderer.setSeriesLinesVisible(0, false);
         renderer.setSeriesShapesVisible(0, true);
 
+
         renderer.setSeriesLinesVisible(1, false);
         renderer.setSeriesShapesVisible(1, true);
 
+
         renderer.setSeriesLinesVisible(2, false);
         renderer.setSeriesShapesVisible(2, true);
+        Color transparentBlue = new Color(0, 0, 255, 100);
+        renderer.setSeriesPaint(2, transparentBlue);
 
         renderer.setSeriesLinesVisible(3, false);
         renderer.setSeriesShapesVisible(3, true);
+        Color transparentRed = new Color(255, 0, 0, 100);
+        renderer.setSeriesPaint(3, transparentRed);
+
+        renderer.setSeriesLinesVisible(4, false);
+        renderer.setSeriesShapesVisible(4, true);
 
         // Apply configuration
         plot.setRenderer(renderer);
@@ -265,23 +319,19 @@ public class GraphicInterface extends JFrame {
         plot.setDomainGridlinePaint(Color.white);
 
         // Add chart to the decision boundary.
-        if(decisionBoundaryPanel != null)
-        {
+        if(decisionBoundaryPanel != null)       // Remove old chart
             mainFrame.remove(decisionBoundaryPanel);
-            decisionBoundaryPanel.setChart(null);
-        }
 
         decisionBoundaryPanel = new ChartPanel(chart);
         decisionBoundaryPanel.setMouseWheelEnabled(false);
         decisionBoundaryPanel.setPreferredSize(new Dimension(600, 500));
 
-        decisionBoundaryPanel.revalidate();
-        decisionBoundaryPanel.repaint();
+        return true;
     }
 
     /***
      * Method to cast an List<List<Double>> into a Double[][] list.
-     * @param list
+     * @param list List to be cast to a double[][]
      * @return array
      */
     private double[][] convertList2Array(List<List<Double>> list)

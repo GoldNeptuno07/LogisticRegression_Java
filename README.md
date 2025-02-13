@@ -62,11 +62,7 @@ $\frac{\partial L}{\partial b} = \frac{\partial L}{\partial \sigma} . \frac{\par
 
 
 # TO DO
-- Check pipeline to accept data files with more than 2 features.
-- Implement the prediction functionality.
-- Display the feature names in the plot.
-- Display the class names in the plot.
-- Add the functionality "Retrain Model".
-
+- Add the Help text in the GUI
+- Check the javadoc documentation in the code.
 
 
